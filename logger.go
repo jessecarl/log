@@ -42,8 +42,9 @@ type Encoder interface {
 }
 
 type logger struct {
-	encoder Encoder
-	filters []Filter
+	encoder   Encoder
+	filters   []Filter
+	threshold Level
 }
 
 func (lg *logger) Log(lvl Level, data Data) {
