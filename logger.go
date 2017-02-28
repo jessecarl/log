@@ -43,9 +43,15 @@ type Encoder interface {
 
 type logger struct {
 	encoder Encoder
+	filters []Filter
 }
 
 func (lg *logger) Log(lvl Level, data Data) {
+	for _, fn := range lg.filters {
+		if data = fn(lvl, lg.threshold, data); data == nil {
+			return
+		}
+	}
 	if err := lg.encoder.Encode(data); err != nil {
 		// I'm ambivalent on printing anything to stdout/stderr, but this should probably happen
 		fmt.Fprintf(os.Stderr, "Error writing to log: %+v\n", err)
