@@ -11,23 +11,6 @@ type Logger interface {
 	Log(Level, Data)
 }
 
-// Level is used to indicate priority or threshold
-type Level int
-
-const (
-	// FatalLevel should be used to communicate when the application has failed
-	// and is left in an unpredictable state.
-	FatalLevel Level = iota
-	// ErrorLevel should be used to communicate when something went wrong in the
-	// application, but the application can continue.
-	ErrorLevel
-	// InfoLevel should be used to communicate when something happened that is
-	// worth noting.
-	InfoLevel
-	// TraceLevel should be used to communicate when something happened.
-	TraceLevel
-)
-
 // Data provides an easily marshaled payload for structured logging. While an
 // empty interface alone would satisfy the most basic requirements for
 // structured logging, string keys on the first level allow better performance
@@ -54,7 +37,8 @@ func (lg *logger) Log(lvl Level, data Data) {
 		}
 	}
 	if err := lg.encoder.Encode(data); err != nil {
-		// I'm ambivalent on printing anything to stdout/stderr, but this should probably happen
+		// I'm ambivalent on printing anything to stdout/stderr, but this should probably happen. (jallen)
+		// I agree. (rrichardson)
 		fmt.Fprintf(os.Stderr, "Error writing to log: %+v\n", err)
 	}
 }
