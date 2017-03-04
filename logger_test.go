@@ -1,6 +1,7 @@
 package log_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -99,6 +100,21 @@ func TestNewUsesDefaultEncoder(t *testing.T) {
 
 	lg := log.New(log.Config{Filters: []log.Filter{nopFilter}})
 	lg.Log(log.InfoLevel, log.Data{})
+}
+
+func TestLogHandlesEncoderErrors(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockEncoder := mock_log.NewMockEncoder(mockCtrl)
+
+	lg := log.New(log.Config{
+		Filters: []log.Filter{Pi},
+		Encoder: mockEncoder,
+	})
+	first := mockEncoder.EXPECT().Encode(gomock.Eq(log.Data{"pi": 3.14})).Times(1).Return(fmt.Errorf("ignore this error"))
+	mockEncoder.EXPECT().Encode(gomock.Eq(log.Data{"pi": 3.14})).After(first).Times(1).Return(nil)
+	lg.Log(log.FatalLevel, log.Data{})
+	lg.Log(log.FatalLevel, log.Data{})
 }
 
 func TestNewUsesThreshold(t *testing.T) {
