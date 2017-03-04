@@ -28,6 +28,8 @@ type Encoder interface {
 // DefaultEncoder ensures that a New logger does not requre an explicit Encoder
 var DefaultEncoder Encoder = json.NewEncoder(os.Stdout)
 
+var _ Logger = &logger{}
+
 type logger struct {
 	encoder   Encoder
 	filters   []Filter
