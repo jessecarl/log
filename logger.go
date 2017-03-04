@@ -1,6 +1,7 @@
 package log
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 )
@@ -24,10 +25,36 @@ type Encoder interface {
 	Encode(interface{}) error
 }
 
+// DefaultEncoder ensures that a New logger does not requre an explicit Encoder
+var DefaultEncoder Encoder = json.NewEncoder(os.Stdout)
+
 type logger struct {
 	encoder   Encoder
 	filters   []Filter
 	threshold Level
+}
+
+// Config contains the values that will be used by a new Logger
+type Config struct {
+	Threshold Level
+	Encoder   Encoder
+	Filters   []Filter
+}
+
+// New provides a basic Logger using the provided configuration.
+func New(config Config) Logger {
+	lg := &logger{
+		encoder:   config.Encoder,
+		filters:   config.Filters,
+		threshold: config.Threshold,
+	}
+	if len(lg.filters) == 0 {
+		lg.filters = []Filter{DefaultFilter}
+	}
+	if config.Encoder == nil {
+		lg.encoder = DefaultEncoder
+	}
+	return lg
 }
 
 func (lg *logger) Log(lvl Level, data Data) {
@@ -36,6 +63,7 @@ func (lg *logger) Log(lvl Level, data Data) {
 			return
 		}
 	}
+
 	if err := lg.encoder.Encode(data); err != nil {
 		// I'm ambivalent on printing anything to stdout/stderr, but this should probably happen. (jallen)
 		// I agree. (rrichardson)

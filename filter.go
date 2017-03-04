@@ -8,8 +8,12 @@ import "time"
 // effective way of stopping Data from being logged.
 type Filter func(lvl, threshold Level, data Data) Data
 
-// DefaultTimestampFormat is used by the BaseFilter to add timestamps to logs
-var DefaultTimestampFormat = "2006-01-02T15:04:05.000Z"
+var (
+	// DefaultTimestampFormat is used by the BaseFilter to add timestamps to logs.
+	DefaultTimestampFormat = "2006-01-02T15:04:05.000Z"
+	// DefaultFilter sets the BaseFilter to be enabled by default.
+	DefaultFilter = BaseFilter()
+)
 
 // BaseFilter provides a Filter that prevents logs above the set threshold from
 // being logged, and adds a timestamp, version, and log level to the log Data.
