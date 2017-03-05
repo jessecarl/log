@@ -49,3 +49,21 @@ func StackFilter(stackLevel Level) Filter {
 		return data
 	}
 }
+
+// ErrorFilter ensures that raw errors in Data with specified keys are correctly
+// displayed.
+func ErrorFilter(errorKeys ...string) Filter {
+	return func(lvl, threshold Level, data Data) Data {
+		for _, key := range errorKeys {
+			err, exists := data[key]
+			if !exists {
+				continue
+			}
+			val, ok := err.(error)
+			if ok {
+				data[key] = val.Error()
+			}
+		}
+		return data
+	}
+}

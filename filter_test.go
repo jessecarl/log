@@ -1,6 +1,7 @@
 package log_test
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 	"time"
@@ -230,6 +231,123 @@ func TestStackFilter(t *testing.T) {
 						got,
 						v,
 					)
+				}
+			}
+		})
+	}
+}
+
+func TestErrorFilter(t *testing.T) {
+	testCases := []struct {
+		name      string
+		lvl       log.Level
+		threshold log.Level
+		errorKeys []string
+		inData    log.Data
+		wantData  log.Data
+	}{
+		{"nil data, no keys",
+			log.FatalLevel,
+			log.FatalLevel,
+			nil,
+			nil,
+			nil,
+		},
+		{"nil data, one key",
+			log.InfoLevel,
+			log.InfoLevel,
+			[]string{"Error"},
+			nil,
+			nil,
+		},
+		{"no data, ErrorLevel, ErrorLevel, no keys",
+			log.ErrorLevel,
+			log.ErrorLevel,
+			[]string{},
+			log.Data{},
+			log.Data{},
+		},
+		{"misc data, no keys",
+			log.TraceLevel,
+			log.TraceLevel,
+			[]string{},
+			log.Data{
+				"pi": 3.14,
+			},
+			log.Data{
+				"pi": 3.14,
+			},
+		},
+		{"misc data, with keys, no matches",
+			log.TraceLevel,
+			log.TraceLevel,
+			[]string{"Error", "foo"},
+			log.Data{
+				"pi": 3.14,
+			},
+			log.Data{
+				"pi": 3.14,
+			},
+		},
+		{"misc data, with keys, with matches, no errors",
+			log.TraceLevel,
+			log.TraceLevel,
+			[]string{"Error", "foo"},
+			log.Data{
+				"pi":  3.14,
+				"foo": "bar",
+			},
+			log.Data{
+				"pi":  3.14,
+				"foo": "bar",
+			},
+		},
+		{"misc data, with keys, with matches, including errors",
+			log.TraceLevel,
+			log.TraceLevel,
+			[]string{"Error", "foo"},
+			log.Data{
+				"pi":    3.14,
+				"foo":   "bar",
+				"Error": fmt.Errorf("baz"),
+			},
+			log.Data{
+				"pi":    3.14,
+				"foo":   "bar",
+				"Error": "baz",
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			gotData := log.ErrorFilter(tc.errorKeys...)(tc.lvl, tc.threshold, tc.inData)
+
+			if gotData != nil && tc.wantData == nil {
+				t.Fatalf("ErrorFilter(%+v)(%v, %v, %+v) = %+v, expected %+v", tc.errorKeys, tc.lvl, tc.threshold, tc.inData, gotData, tc.wantData)
+			}
+			if gotData == nil && tc.wantData != nil {
+				t.Fatalf("ErrorFilter(%+v)(%v, %v, %+v) = %+v, expected %+v", tc.errorKeys, tc.lvl, tc.threshold, tc.inData, gotData, tc.wantData)
+			}
+
+			if len(gotData) != len(tc.wantData) {
+				t.Fatalf("ErrorFilter(%+v)(%v, %v, %+v) = %+v, expected %+v", tc.errorKeys, tc.lvl, tc.threshold, tc.inData, gotData, tc.wantData)
+			}
+
+			for k, v := range tc.wantData {
+				got, ok := gotData[k]
+				if !ok {
+					t.Fatalf("ErrorFilter(%+v)(%v, %v, %+v)[%q] == <nil>, expected %+v", tc.errorKeys, tc.lvl, tc.threshold, tc.inData, k, v)
+				}
+				if k == "@timestamp" {
+					if _, err := time.Parse(v.(string), got.(string)); err != nil {
+						t.Fatalf("ErrorFilter(%+v)(%v, %v, %+v)[\"@timestamp\"] = %+v, expected like %q without parsing error %+v", tc.errorKeys, tc.lvl, tc.threshold, tc.inData, got, v, err)
+					}
+					continue
+				}
+				if !reflect.DeepEqual(got, v) {
+					t.Fatalf("ErrorFilter(%+v)(%v, %v, %+v)[%q] == %+v, expected %+v", tc.errorKeys, tc.lvl, tc.threshold, tc.inData, k, got, v)
 				}
 			}
 		})
