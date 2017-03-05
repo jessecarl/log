@@ -1,6 +1,9 @@
 package log
 
-import "time"
+import (
+	"runtime/debug"
+	"time"
+)
 
 // Filter is a function that is used to manipulate the Data passed to a Logger.
 // This could be adding fields, removing fields, or even setting the Data to
@@ -30,6 +33,19 @@ func BaseFilter() Filter {
 		data["@timestamp"] = time.Now().UTC().Format(DefaultTimestampFormat)
 		data["@version"] = "1"
 		data["log_level"] = lvl
+		return data
+	}
+}
+
+// StackFilter adds a stack trace to log data when the log level exceeds the threshold.
+func StackFilter(stackLevel Level) Filter {
+	return func(lvl, threshold Level, data Data) Data {
+		if data == nil {
+			return nil
+		}
+		if lvl <= stackLevel {
+			data["_stack"] = string(debug.Stack())
+		}
 		return data
 	}
 }

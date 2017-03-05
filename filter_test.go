@@ -137,3 +137,101 @@ func TestBaseFilter(t *testing.T) {
 		})
 	}
 }
+
+func TestStackFilter(t *testing.T) {
+	testCases := []struct {
+		name        string
+		inData      log.Data
+		inLevel     log.Level
+		inThreshold log.Level
+		wantData    log.Data
+	}{
+		{"nil data",
+			nil,
+			log.FatalLevel,
+			log.FatalLevel,
+			nil,
+		},
+		{"no data",
+			log.Data{},
+			log.FatalLevel,
+			log.FatalLevel,
+			log.Data{
+				"_stack": "foo",
+			},
+		},
+		{"misc data",
+			log.Data{
+				"pi": 3.14,
+			},
+			log.ErrorLevel,
+			log.ErrorLevel,
+			log.Data{
+				"_stack": "foo",
+				"pi":     3.14,
+			},
+		},
+		{"conflicting data",
+			log.Data{
+				"_stack": 1.618,
+			},
+			log.InfoLevel,
+			log.InfoLevel,
+			log.Data{
+				"_stack": "foo",
+			},
+		},
+		{"below threshold",
+			log.Data{
+				"pi": 3.14,
+			},
+			log.InfoLevel,
+			log.ErrorLevel,
+			log.Data{
+				"pi": 3.14,
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			gotData := log.StackFilter(tc.inThreshold)(tc.inLevel, log.InfoLevel, tc.inData)
+
+			if gotData != nil && tc.wantData == nil {
+				t.Fatalf("StackFilter(%+v)(%+v, InfoLevel, %+v) = %+v, expected %+v", tc.inThreshold, tc.inLevel, tc.inData, gotData, tc.wantData)
+			}
+			if gotData == nil && tc.wantData != nil {
+				t.Fatalf("StackFilter(%+v)(%+v, InfoLevel, %+v) = %+v, expected %+v", tc.inThreshold, tc.inLevel, tc.inData, gotData, tc.wantData)
+			}
+
+			if len(gotData) != len(tc.wantData) {
+				t.Fatalf("StackFilter(%+v)(%+v, InfoLevel, %+v) = %+v, expected %+v", tc.inThreshold, tc.inLevel, tc.inData, gotData, tc.wantData)
+			}
+
+			for k, v := range tc.wantData {
+				got, ok := gotData[k]
+				if !ok {
+					t.Fatalf("StackFilter(%+v)(%+v, InfoLevel, %+v)[%q] == <nil>, expected, %+v", tc.inThreshold, tc.inLevel, tc.inData, k, v)
+				}
+				if k == "_stack" {
+					if _, ok := got.(string); !ok {
+						t.Fatalf("StackFilter(%+v)(%+v, InfoLevel, %+v)[\"_stack\"] = %+v, expected a string", tc.inThreshold, tc.inLevel, tc.inData, got)
+					}
+					continue
+				}
+				if !reflect.DeepEqual(got, v) {
+					t.Fatalf(
+						"StackFilter(%+v)(%+v, InfoLevel, %+v)[%q] == %+v, expected, %+v",
+						tc.inThreshold,
+						tc.inLevel,
+						tc.inData,
+						k,
+						got,
+						v,
+					)
+				}
+			}
+		})
+	}
+}
