@@ -2,10 +2,9 @@ package graylog_test
 
 import (
 	"compress/gzip"
-	"io"
-	"math/rand"
+	"fmt"
 	"net"
-	"sync"
+	"strings"
 	"testing"
 	"time"
 
@@ -16,102 +15,275 @@ func BenchmarkWrite(b *testing.B) {
 	// For the sake of benchmarking, we'll use a NoCompression level of compression
 	compressionLvl := gzip.NoCompression
 
-	b.Run("Size=10", func(b *testing.B) {
+	// returns a newline terminated string of length 20+size*3 (not including the newline)
+	stringToTest := func(size int) string {
+		return fmt.Sprintf("{\"long string\" : \"%s\"}\n", strings.Repeat("pop ", size))
+	}
+
+	b.Run("Size=1", func(b *testing.B) {
 		c, _ := graylog.New(graylog.Config{
 			CompressionLevel: compressionLvl,
 			ClientPacketConn: nopPacketConn{},
 		})
 		b.RunParallel(func(pb *testing.PB) {
-			source := &randomWriterTo{
-				size: 10,
-				r:    rand.New(rand.NewSource(10)),
-			}
+			s := stringToTest(1)
 			for pb.Next() {
-				source.WriteTo(c)
+				c.Write([]byte(s))
 			}
 		})
 	})
-
-	b.Run("Size=100", func(b *testing.B) {
+	b.Run("Size=2", func(b *testing.B) {
 		c, _ := graylog.New(graylog.Config{
 			CompressionLevel: compressionLvl,
 			ClientPacketConn: nopPacketConn{},
 		})
 		b.RunParallel(func(pb *testing.PB) {
-			source := &randomWriterTo{
-				size: 100,
-				r:    rand.New(rand.NewSource(10)),
-			}
+			s := stringToTest(2)
 			for pb.Next() {
-				source.WriteTo(c)
+				c.Write([]byte(s))
 			}
 		})
 	})
-
-	b.Run("Size=1000", func(b *testing.B) {
+	b.Run("Size=3", func(b *testing.B) {
 		c, _ := graylog.New(graylog.Config{
 			CompressionLevel: compressionLvl,
 			ClientPacketConn: nopPacketConn{},
 		})
 		b.RunParallel(func(pb *testing.PB) {
-			source := &randomWriterTo{
-				size: 1000,
-				r:    rand.New(rand.NewSource(10)),
-			}
+			s := stringToTest(3)
 			for pb.Next() {
-				source.WriteTo(c)
+				c.Write([]byte(s))
 			}
 		})
 	})
-
-	b.Run("Size=10000", func(b *testing.B) {
+	b.Run("Size=5", func(b *testing.B) {
 		c, _ := graylog.New(graylog.Config{
 			CompressionLevel: compressionLvl,
 			ClientPacketConn: nopPacketConn{},
 		})
 		b.RunParallel(func(pb *testing.PB) {
-			source := &randomWriterTo{
-				size: 10000,
-				r:    rand.New(rand.NewSource(10)),
-			}
+			s := stringToTest(5)
 			for pb.Next() {
-				source.WriteTo(c)
+				c.Write([]byte(s))
 			}
 		})
 	})
-
-	b.Run("Size=100000", func(b *testing.B) {
+	b.Run("Size=8", func(b *testing.B) {
 		c, _ := graylog.New(graylog.Config{
 			CompressionLevel: compressionLvl,
 			ClientPacketConn: nopPacketConn{},
 		})
 		b.RunParallel(func(pb *testing.PB) {
-			source := &randomWriterTo{
-				size: 100000,
-				r:    rand.New(rand.NewSource(10)),
-			}
+			s := stringToTest(8)
 			for pb.Next() {
-				source.WriteTo(c)
+				c.Write([]byte(s))
 			}
 		})
 	})
-}
-
-type randomWriterTo struct {
-	size int
-
-	mu sync.Mutex
-	r  *rand.Rand
-}
-
-func (wt *randomWriterTo) WriteTo(w io.Writer) (int64, error) {
-	b := make([]byte, wt.size+1)
-	wt.mu.Lock()
-	wt.r.Read(b[:wt.size])
-	wt.mu.Unlock()
-	b[wt.size] = '\n'
-	n, err := w.Write(b)
-	return int64(n), err
+	b.Run("Size=13", func(b *testing.B) {
+		c, _ := graylog.New(graylog.Config{
+			CompressionLevel: compressionLvl,
+			ClientPacketConn: nopPacketConn{},
+		})
+		b.RunParallel(func(pb *testing.PB) {
+			s := stringToTest(13)
+			for pb.Next() {
+				c.Write([]byte(s))
+			}
+		})
+	})
+	b.Run("Size=21", func(b *testing.B) {
+		c, _ := graylog.New(graylog.Config{
+			CompressionLevel: compressionLvl,
+			ClientPacketConn: nopPacketConn{},
+		})
+		b.RunParallel(func(pb *testing.PB) {
+			s := stringToTest(21)
+			for pb.Next() {
+				c.Write([]byte(s))
+			}
+		})
+	})
+	b.Run("Size=34", func(b *testing.B) {
+		c, _ := graylog.New(graylog.Config{
+			CompressionLevel: compressionLvl,
+			ClientPacketConn: nopPacketConn{},
+		})
+		b.RunParallel(func(pb *testing.PB) {
+			s := stringToTest(34)
+			for pb.Next() {
+				c.Write([]byte(s))
+			}
+		})
+	})
+	b.Run("Size=55", func(b *testing.B) {
+		c, _ := graylog.New(graylog.Config{
+			CompressionLevel: compressionLvl,
+			ClientPacketConn: nopPacketConn{},
+		})
+		b.RunParallel(func(pb *testing.PB) {
+			s := stringToTest(55)
+			for pb.Next() {
+				c.Write([]byte(s))
+			}
+		})
+	})
+	b.Run("Size=89", func(b *testing.B) {
+		c, _ := graylog.New(graylog.Config{
+			CompressionLevel: compressionLvl,
+			ClientPacketConn: nopPacketConn{},
+		})
+		b.RunParallel(func(pb *testing.PB) {
+			s := stringToTest(89)
+			for pb.Next() {
+				c.Write([]byte(s))
+			}
+		})
+	})
+	b.Run("Size=144", func(b *testing.B) {
+		c, _ := graylog.New(graylog.Config{
+			CompressionLevel: compressionLvl,
+			ClientPacketConn: nopPacketConn{},
+		})
+		b.RunParallel(func(pb *testing.PB) {
+			s := stringToTest(144)
+			for pb.Next() {
+				c.Write([]byte(s))
+			}
+		})
+	})
+	b.Run("Size=233", func(b *testing.B) {
+		c, _ := graylog.New(graylog.Config{
+			CompressionLevel: compressionLvl,
+			ClientPacketConn: nopPacketConn{},
+		})
+		b.RunParallel(func(pb *testing.PB) {
+			s := stringToTest(233)
+			for pb.Next() {
+				c.Write([]byte(s))
+			}
+		})
+	})
+	b.Run("Size=377", func(b *testing.B) {
+		c, _ := graylog.New(graylog.Config{
+			CompressionLevel: compressionLvl,
+			ClientPacketConn: nopPacketConn{},
+		})
+		b.RunParallel(func(pb *testing.PB) {
+			s := stringToTest(377)
+			for pb.Next() {
+				c.Write([]byte(s))
+			}
+		})
+	})
+	b.Run("Size=610", func(b *testing.B) {
+		c, _ := graylog.New(graylog.Config{
+			CompressionLevel: compressionLvl,
+			ClientPacketConn: nopPacketConn{},
+		})
+		b.RunParallel(func(pb *testing.PB) {
+			s := stringToTest(610)
+			for pb.Next() {
+				c.Write([]byte(s))
+			}
+		})
+	})
+	b.Run("Size=987", func(b *testing.B) {
+		c, _ := graylog.New(graylog.Config{
+			CompressionLevel: compressionLvl,
+			ClientPacketConn: nopPacketConn{},
+		})
+		b.RunParallel(func(pb *testing.PB) {
+			s := stringToTest(987)
+			for pb.Next() {
+				c.Write([]byte(s))
+			}
+		})
+	})
+	b.Run("Size=1597", func(b *testing.B) {
+		c, _ := graylog.New(graylog.Config{
+			CompressionLevel: compressionLvl,
+			ClientPacketConn: nopPacketConn{},
+		})
+		b.RunParallel(func(pb *testing.PB) {
+			s := stringToTest(1597)
+			for pb.Next() {
+				c.Write([]byte(s))
+			}
+		})
+	})
+	b.Run("Size=2584", func(b *testing.B) {
+		c, _ := graylog.New(graylog.Config{
+			CompressionLevel: compressionLvl,
+			ClientPacketConn: nopPacketConn{},
+		})
+		b.RunParallel(func(pb *testing.PB) {
+			s := stringToTest(2584)
+			for pb.Next() {
+				c.Write([]byte(s))
+			}
+		})
+	})
+	b.Run("Size=4181", func(b *testing.B) {
+		c, _ := graylog.New(graylog.Config{
+			CompressionLevel: compressionLvl,
+			ClientPacketConn: nopPacketConn{},
+		})
+		b.RunParallel(func(pb *testing.PB) {
+			s := stringToTest(4181)
+			for pb.Next() {
+				c.Write([]byte(s))
+			}
+		})
+	})
+	b.Run("Size=6765", func(b *testing.B) {
+		c, _ := graylog.New(graylog.Config{
+			CompressionLevel: compressionLvl,
+			ClientPacketConn: nopPacketConn{},
+		})
+		b.RunParallel(func(pb *testing.PB) {
+			s := stringToTest(6765)
+			for pb.Next() {
+				c.Write([]byte(s))
+			}
+		})
+	})
+	b.Run("Size=10946", func(b *testing.B) {
+		c, _ := graylog.New(graylog.Config{
+			CompressionLevel: compressionLvl,
+			ClientPacketConn: nopPacketConn{},
+		})
+		b.RunParallel(func(pb *testing.PB) {
+			s := stringToTest(10946)
+			for pb.Next() {
+				c.Write([]byte(s))
+			}
+		})
+	})
+	b.Run("Size=17711", func(b *testing.B) {
+		c, _ := graylog.New(graylog.Config{
+			CompressionLevel: compressionLvl,
+			ClientPacketConn: nopPacketConn{},
+		})
+		b.RunParallel(func(pb *testing.PB) {
+			s := stringToTest(17711)
+			for pb.Next() {
+				c.Write([]byte(s))
+			}
+		})
+	})
+	b.Run("Size=28657", func(b *testing.B) {
+		c, _ := graylog.New(graylog.Config{
+			CompressionLevel: compressionLvl,
+			ClientPacketConn: nopPacketConn{},
+		})
+		b.RunParallel(func(pb *testing.PB) {
+			s := stringToTest(28657)
+			for pb.Next() {
+				c.Write([]byte(s))
+			}
+		})
+	})
 }
 
 type nopPacketConn struct{}
