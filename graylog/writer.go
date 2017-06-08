@@ -15,10 +15,9 @@ import (
 
 // Client is a Writer for graylog over UDP or other Packet Connection
 type Client struct {
-	compressionLevel int
-	instanceID       [4]byte
-	addr             net.Addr
-	conn             net.PacketConn
+	instanceID [4]byte
+	addr       net.Addr
+	conn       net.PacketConn
 
 	countMux     sync.Mutex
 	messageCount uint32
@@ -50,11 +49,14 @@ func New(c Config) (*Client, error) {
 
 	gl := &Client{
 		msgPool: sync.Pool{
-			New: func() interface{} { return new(message) },
+			New: func() interface{} {
+				msg := new(message)
+				msg.zip, _ = gzip.NewWriterLevel(&msg.buf, c.CompressionLevel)
+				return msg
+			},
 		},
-		compressionLevel: c.CompressionLevel,
-		addr:             c.ServerAddr,
-		conn:             c.ClientPacketConn,
+		addr: c.ServerAddr,
+		conn: c.ClientPacketConn,
 	}
 
 	if _, err := rand.Read(gl.instanceID[0:4]); err != nil {
@@ -82,7 +84,6 @@ var ErrMissingNewline = errors.New("missing newline terminating write")
 
 func (gl *Client) newMessage() *message {
 	msg := gl.msgPool.Get().(*message)
-	msg.zip, _ = gzip.NewWriterLevel(&msg.buf, gl.compressionLevel)
 	msg.id = gl.messageID()
 	msg.conn = gl.conn
 	msg.addr = gl.addr
